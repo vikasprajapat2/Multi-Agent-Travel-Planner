@@ -3,7 +3,7 @@ import sys
 import random 
 from dataclasses import dataclass, asdict
 
-sys.path.insert(0, os.path.diename(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  
 
 from config import USE_MOCK_APIS
 
@@ -22,14 +22,14 @@ class HotelOption:
     breakfast: bool 
     category: str
 
-    def to_dect(self) -> dict:
+    def to_dict(self) -> dict:
         return asdict(self)
     
     def summary(self) -> str:
-        start_str ="*" * self.stars
+        start_str ="★"* self.stars
         bkfstn =" | Breakfast incl." if self.breakfast else ""
         return (
-            f"{self.name} {starts_str} | {self.area} |"
+            f"{self.name} {stars_str} | {self.area} |"
             f"₹{self.price_per_night:,}/night | "
             f"Rating: {self.rating}/10{bkfst}"
         )
@@ -96,11 +96,11 @@ def _mock_search(
         max_per_nights: float | None = None,
         travel_type:  str = "couple",
         preference: list = "None",
-) -> List[HotelOption]:
+) -> list[HotelOption]:
     
     preference = preference or []
-    des_key = destination.lower().split(",")[0].strip()
-    areas = _AREAS.get(dest_key, AREAS['default'])
+    dest_key = destination.lower().split(",")[0].strip()
+    areas = _AREAS.get(dest_key, _AREAS['default'])
 
     is_lixuary = "luxury" in preference or travel_type == "honeymoon"
     is_budget = "budget" in preference
@@ -113,7 +113,7 @@ def _mock_search(
 
     random.seed(hash(destination.lower() + check_in) % 9999)
 
-    option: list[HotelOption] = []
+    options: list[HotelOption] = []
 
     for tier in tier_order:
         t = _TIERS[tier]
@@ -125,7 +125,7 @@ def _mock_search(
 
         pmin, pmax = t['price']
         price = random.randint(pmin, pmax)
-        rating = round(random.uniform(*t[rating]), 1)
+        rating = round(random.uniform(*t["rating"]), 1)
 
         #family surcharge
         if travel_type == "family":
@@ -136,7 +136,7 @@ def _mock_search(
 
         total = price * nights
 
-        option.append(HostelOption(
+        options.append(HotelOption(
             name            = name,
             stars           = t["stars"],
             area            = area,
@@ -146,10 +146,10 @@ def _mock_search(
             amenities       = t["amenities"],
             cancellation    = "Free cancellation up to 48h before check-in",
             breakfast       = t["breakfast"],
-            category        = tier,           
+            category        = tier,
         ))
-    return option
 
+    return options
 # public interface
 def search_hotels(
     destination:   str,
@@ -162,8 +162,8 @@ def search_hotels(
 ) -> list[dict]:
     if USE_MOCK_APIS:
         options = _mock_search(
-            destination= check_in, nights, guests,,
-            max_per_nights, travel_type, preference or [],
+            destination, check_in, nights, guests,
+            max_per_night, travel_type, preferences or [],
         )
     else:
         raise NotImplementedError(
@@ -173,5 +173,40 @@ def search_hotels(
 
     return [h.to_dict() for h in options]
 
+# self test
 
+if __name__ == "__main__":
+    print("=" * 55)
+    print("  hotel_api.py — self test")
+    print("=" * 55)
+ 
+    tests = [
+        # (dest,       check_in,      nights, guests, max/night, type,        label)
+        ("Goa",        "2025-06-15",  4,      2,      None,      "couple",    "Goa couple, no budget limit"),
+        ("Manali",     "2025-06-01",  5,      4,      3000,      "family",    "Manali family, ₹3k/night max"),
+        ("Dubai",      "2025-12-20",  6,      2,      None,      "honeymoon", "Dubai honeymoon"),
+        ("Jaipur",     "2025-10-05",  2,      1,      1500,      "solo",      "Jaipur solo, ₹1.5k/night max"),
+    ]
+ 
+    for dest, checkin, nights, guests, max_night, ttype, label in tests:
+        print(f"\n  Query: {label}")
+        results = search_hotels(dest, checkin, nights, guests, max_night, ttype)
+        for h in results:
+            stars   = "★" * h["stars"]
+            bkfst   = "Bkfst ✓" if h["breakfast"] else "Bkfst ✗"
+            print(f"    [{h['category']:6s}] {h['name']:25s} {stars:5s} | "
+                  f"₹{h['price_per_night']:,}/night (₹{h['total_price']:,} total) | "
+                  f"Rating {h['rating']} | {bkfst}")
+ 
+    # Determinism check
+    print("\n  Determinism check:")
+    r1 = search_hotels("Goa", "2025-06-15", 4, 2)
+    r2 = search_hotels("Goa", "2025-06-15", 4, 2)
+    assert r1 == r2
+    print(" Same inputs always return same hotels")
+ 
+    print("\n" + "=" * 55)
+    print("  hotel_api.py done. Moving to weather_api.py...")
+    print("=" * 55)
+ 
         
