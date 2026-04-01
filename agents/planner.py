@@ -58,7 +58,7 @@ class PlannerAgent:
     def __init__(self):
         self.flight_agent = FlightAgent()
         self.hotel_agent = HotelAgent()
-        self.itinerary_agent = BudgetAgent()
+        self.itinerary_agent = ItineraryAgent()
         self.budget_agent = BudgetAgent()
         self.context_agent = ContextAgent()
 

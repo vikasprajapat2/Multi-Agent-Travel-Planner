@@ -70,7 +70,8 @@ class FlightAgent:
         result = chat_json(prompt = prompt, system=SYSTEM_PROMPT, max_tokens=800)
 
         if result.get("_parse_error") or not result.get('recommended'):
-            print(f" [{self.name}] JSON parse issue - using fallback")
+            print(f"[{self.name}] JSON parse issue - using fallback")
+            return self._fallback(raw_options, request.passengers)
 
         return result
     

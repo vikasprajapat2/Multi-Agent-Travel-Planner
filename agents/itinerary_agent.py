@@ -67,17 +67,12 @@ class ItineraryAgent:
             hotel_area = rec_hotel.get("area", "city centre")
 
         flight_note = ""
-        rec_hotel = hotel.get("recommeded") or {}
-        if isinstance(rec_hotel,dict):
-            hotel_area = rec_hotel.get("area", "city centre")
-
-        flight_note=""
         rec_flight = flights.get('recommended') or {}
         if isinstance(rec_flight,dict):
             arrive= rec_flight.get('arrive_time', '')
             depart = rec_flight.get('depart_time',"")
             if arrive:
-                flight_note += f'Arrive {arrive} on Day 1 - adjust schedule accorfingly.'
+                flight_note += f'Arrive {arrive} on Day 1 - adjust schedule accordingly.'
             if depart:
                 flight_note += f'return flight departs {depart} on day {request.duration_days}.'
             
@@ -87,7 +82,7 @@ class ItineraryAgent:
 Destination : {request.destination}
 Dates : {request.start_date} to {request.end_date}
 Travel type : {request.travel_type}
-Passengers : {request.passengers} adults{f', {request.childern}children' if request.children else ''}
+Passengers : {request.passengers} adults{f', {request.children} children' if request.children else ''}
 Interests : {request.pref_str()}
 Hotel area : {hotel_area}
 Flight info : {flight_note if flight_note else "Not specified"}               
@@ -103,7 +98,7 @@ Special instructions:
  
 Return the complete day-by-day itinerary as JSON. No other text."""
         
-        result - chat_json(
+        result = chat_json(
             prompt = prompt, 
             system = SYSTEM_PROMPT,
             max_tokens = 3000,
@@ -122,7 +117,7 @@ Return the complete day-by-day itinerary as JSON. No other text."""
         return result
     
 #self test
-if __name__ == "__name__":
+if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
