@@ -62,22 +62,22 @@ class PlannerAgent:
         self.budget_agent = BudgetAgent()
         self.context_agent = ContextAgent()
 
-        # public method 1 - plan()
-        def plan(self, user_query: str, session_id: str | None = None) -> dict:
-            print(f"\n{'='*50}")
-            request = self._parse_request(user_query)
-            request =  self._parse_request(user_query)
-            print(f"[Planner] Parsed  : {request.travel_type} trip | "
-                  f"{request.origin} → {request.destination} | "
-                  f"{request.duration_days}d | ₹{request.budget:,.0f}")
-            
+    # public method 1 - plan()
+    def plan(self, user_query: str, session_id: str | None = None) -> dict:
+        print(f"\n{'='*50}")
+        request = self._parse_request(user_query)
+        request =  self._parse_request(user_query)
+        print(f"[Planner] Parsed  : {request.travel_type} trip | "
+                f"{request.origin} → {request.destination} | "
+                f"{request.duration_days}d | ₹{request.budget:,.0f}")
+        
         # Step 1: Parse natural language → TravelRequest
-        rint(f"\n{'='*50}")
+        print(f"\n{'='*50}")
         print(f"[Planner] Parsing: {user_query[:60]}...")
         request = self._parse_request(user_query)
         print(f"[Planner] Parsed  : {request.travel_type} trip | "
-              f"{request.origin} → {request.destination} | "
-              f"{request.duration_days}d | ₹{request.budget:,.0f}")
+                f"{request.origin} → {request.destination} | "
+                f"{request.duration_days}d | ₹{request.budget:,.0f}")
 
         #step 2 : marge saved preferences from session 
         if session_id:
@@ -91,33 +91,33 @@ class PlannerAgent:
 
         #Step 3: Run agents in order
         print(f"\n[Planner] Running agents..")
-         
+            
         
         print(f"  [1/5] FlightAgent...")
         flights = self.flight_agent.run(request)
         print(f"        → ₹{flights.get('round_trip_cost', 0):,} | "
-              f"{flights.get('recommended', {}).get('airline', 'N/A')}")
- 
+                f"{flights.get('recommended', {}).get('airline', 'N/A')}")
+
         print(f"  [2/5] HotelAgent...")
         hotel = self.hotel_agent.run(request)
         rec_hotel = hotel.get('recommended', {})
         print(f"        → ₹{hotel.get('per_night_cost', 0):,}/night | "
-              f"{rec_hotel.get('name', 'N/A')}")
- 
+                f"{rec_hotel.get('name', 'N/A')}")
+
         print(f"  [3/5] ContextAgent...")
         context = self.context_agent.run(request)
         print(f"        → Season: {context.get('season', 'N/A')} | "
-              f"{context.get('condition', 'N/A')}")
- 
+                f"{context.get('condition', 'N/A')}")
+
         print(f"  [4/5] ItineraryAgent...")
         itinerary = self.itinerary_agent.run(request, hotel, flights)
         days_count = len(itinerary.get('days', []))
         print(f"        → {days_count} days generated")
- 
+
         print(f"  [5/5] BudgetAgent...")
         budget = self.budget_agent.run(request, flights, hotel)
         print(f"        → Total: ₹{budget.get('total_cost', 0):,} | "
-              f"Status: {budget.get('status', 'N/A')}")
+                f"Status: {budget.get('status', 'N/A')}")
         
         # Step 4: Merge all results into final plan
 
@@ -147,3 +147,20 @@ class PlannerAgent:
         print(f"[Planner] Done! Plan: {plan['trip_title']}")
         return plan
     
+    #public method 2 - replan()
+    def replan(self, session_id: str, change_request: str) -> dict:
+        prev_request = SessionStore.get_letest_request(session_id)
+        if not prev_request:
+            raise ValueError("no esisting plan found. start a new trip first"
+            )
+    
+        combined_query = (
+            f"Update this trip: {change_request}. "
+            f"Keep everything else the same. "
+            f"Original trip: {prev_request.get('duration_days')} days to "
+            f"{prev_request.get('destination')} from "
+            f"{prev_request.get('origin')}, "
+            f"budget ₹{prev_request.get('budget', 0):,.0f}, "
+            f"travel type: {prev_request.get('travel_type')}, "
+            f"preferences: {', '.join(prev_request.get('preferences', []))}"           
+        )
