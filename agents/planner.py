@@ -14,7 +14,7 @@ from agents.fllight_agent import FlightAgent
 from agents.hotel_agent import HotelAgent
 from agents.itinerary_agent import ItineraryAgent
 from agents.budget_agent import BudgetAgent
-from agents.contex_agent import ContextAgent
+from agents.context_agent import ContextAgent
 
 # parse prompt
 PARSE_SYSTEM = """You are a travel request parser for Indian travellers.

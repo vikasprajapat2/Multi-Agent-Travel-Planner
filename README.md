@@ -261,6 +261,10 @@ D:\travel-ai\
 ├── config.py              Part 1 ✅
 ├── llm_client.py          Part 1 ✅
 ├── main.py                Part 6 ✅
+├── requirements.txt
+├── .env                   (API keys - not in git)
+├── .env.example
+│
 ├── agents/
 │   ├── planner.py         Part 5 ✅
 │   ├── fllight_agent.py   Part 4 ✅
@@ -268,12 +272,15 @@ D:\travel-ai\
 │   ├── itinerary_agent.py Part 4 ✅
 │   ├── budget_agent.py    Part 4 ✅
 │   └── context_agent.py   Part 4 ✅
+│
 ├── tools/
 │   ├── flight_api.py      Part 3 ✅
 │   ├── hotel_api.py       Part 3 ✅
 │   └── weather_api.py     Part 3 ✅
+│
 ├── memory/
-│   └── session_store.py   Part 2 ✅
+│   └── Session_store.py   Part 2 ✅
+│
 └── ui/
     └── app.py             Part 7 ✅
 ```
