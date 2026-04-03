@@ -46,7 +46,7 @@ The main dashboard where users input their travel preferences:
 - Travel type (solo, couple, family, group)
 - Interest selection
 
-![Trip Planning](./screenshots/01-trip-planning.png)
+![Trip Planning](./screenshot/Screenshot%202026-04-03%20110209.png)
 
 ### 2. Context & Safety Information
 Comprehensive travel context with weather, safety tips, and local insights:
@@ -57,7 +57,7 @@ Comprehensive travel context with weather, safety tips, and local insights:
 - Packing essentials
 - Insider travel tips
 
-![Context Info](./screenshots/02-context-info.png)
+![Context Info](./screenshot/Screenshot%202026-04-03%20110458.png)
 
 ### 3. Generated Trip Overview
 Complete trip summary showing all details:
@@ -66,8 +66,6 @@ Complete trip summary showing all details:
 - Travel type
 - Total cost overview
 - Tabs for Flights, Itinerary, Budget, Context, and Chat
-
-![Trip Overview](./screenshots/03-trip-overview.png)
 
 ### 4. Budget Breakdown
 Detailed budget analysis with cost allocation:
@@ -78,7 +76,7 @@ Detailed budget analysis with cost allocation:
 - Visual representation of expense distribution
 - Budget status (within/over budget)
 
-![Budget Breakdown](./screenshots/04-budget-breakdown.png)
+![Budget Breakdown](./screenshot/Screenshot%202026-04-03%20110440.png)
 
 ### 5. Day-by-Day Itinerary
 Detailed daily activities and schedule:
@@ -89,7 +87,7 @@ Detailed daily activities and schedule:
 - Meal recommendations
 - Cost per activity
 
-![Itinerary](./screenshots/05-itinerary.png)
+![Itinerary](./screenshot/Screenshot%202026-04-03%20110405.png)
 
 ### 6. Flight & Hotel Recommendations
 Smart recommendations for transportation and accommodation:
@@ -100,7 +98,7 @@ Smart recommendations for transportation and accommodation:
 - Amenities and facilities
 - Value indicators ("best price available", "best rated option within budget")
 
-![Flights & Hotels](./screenshots/06-flights-hotels.png)
+![Flights & Hotels](./screenshot/Screenshot%202026-04-03%20110330.png)
 
 ## Prerequisites
 
