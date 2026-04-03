@@ -13,6 +13,8 @@ from memory.Session_store import SessionStore
 from agents.fllight_agent import FlightAgent
 from agents.hotel_agent import HotelAgent
 from agents.itinerary_agent import ItineraryAgent
+from agents.train_agent import TrainAgent
+from agents.bus_agent import BusAgent
 from agents.budget_agent import BudgetAgent
 from agents.context_agent import ContextAgent
 
@@ -59,6 +61,8 @@ class PlannerAgent:
         self.flight_agent = FlightAgent()
         self.hotel_agent = HotelAgent()
         self.itinerary_agent = ItineraryAgent()
+        self.train_agent = TrainAgent()
+        self.bus_agent = BusAgent()
         self.budget_agent = BudgetAgent()
         self.context_agent = ContextAgent()
 
@@ -89,6 +93,20 @@ class PlannerAgent:
         flights = self.flight_agent.run(request)
         print(f" → ₹{(flights.get('round_trip_cost') or 0):,} | "
             f"{flights.get('recommended', {}).get('airline', 'N/A')}")
+        
+        print(f"  [2/7] TrainAgent...")
+        trains = self.train_agent.run(request)
+        rec_train = trains.get("recommended") or {}
+        print(f"        → {rec_train.get('train_name','N/A')} | "
+              f"Rs.{trains.get('total_cost',0):,} | "
+              f"Class: {trains.get('best_class','N/A')}")
+        
+        print(f"  [3/7] BusAgent...")
+        buses = self.bus_agent.run(request)
+        rec_bus = buses.get("recommended") or {}
+        print(f"        → {rec_bus.get('operator','N/A')} | "
+              f"Rs.{buses.get('total_cost',0):,} | "
+              f"{buses.get('best_type','N/A')}")
 
         print(f"  [2/5] HotelAgent...")
         hotel = self.hotel_agent.run(request)
@@ -114,7 +132,7 @@ class PlannerAgent:
         # Step 4: Merge all results into final plan
 
         plan = self._merge_plan(
-            request, flights, hotel, itinerary, budget, context
+            request, flights, hotel, itinerary, budget, context, trains, buses
         )
 
         # step 5: Save to session memory
@@ -251,14 +269,10 @@ class PlannerAgent:
         itinerary: dict,
         budget:    dict,
         context:   dict,
+        trains:    dict = None,
+        buses:     dict = None,
     ) -> dict:
-        """
-        Assemble all agent results into the final plan dict.
- 
-        This is the document that gets saved to session, returned to the
-        FastAPI route, and displayed in the Streamlit UI.
-        Every key here corresponds to a tab or section in the UI.
-        """
+        
         # Extract top tips from context for the summary section
         tips = []
         safety  = context.get("safety_tips",  [])
@@ -282,6 +296,8 @@ class PlannerAgent:
  
 
             "flights":     flights,
+            "trains":  train or {},
+            "buses": buses or {},
             "hotel":       hotel,
             "itinerary":   itinerary,
             "budget":      budget,
@@ -295,7 +311,6 @@ class PlannerAgent:
 
 # PART C — Self-test (full end-to-end pipeline)
 
- 
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
@@ -309,7 +324,8 @@ if __name__ == "__main__":
     planner    = PlannerAgent()
     session_id = SessionStore.create()
     print(f"\n  Session ID: {session_id[:8]}...")
-
+ 
+    # ── Test 1: Full plan from natural language ───────────────────────────────
     print("\n" + "-"*50)
     print("  TEST 1: Natural language → full plan")
     print("-"*50)
@@ -320,7 +336,7 @@ if __name__ == "__main__":
         session_id,
     )
  
-    print(f"\n  ✅  Plan generated: {plan['trip_title']}")
+    print(f"\n  Plan generated: {plan['trip_title']}")
     print(f"  Dates     : {plan['dates']}")
     print(f"  Duration  : {plan['duration']}")
  
@@ -329,15 +345,15 @@ if __name__ == "__main__":
     if rec_f:
         print(f"\n  Flight    : {rec_f.get('airline')} {rec_f.get('flight_number')}")
         print(f"  Departs   : {rec_f.get('depart_time')}")
-        print(f"  Cost      : ₹{(plan['flights'].get('round_trip_cost') or 0):,}")
+        print(f"  Cost      : ₹{plan['flights'].get('round_trip_cost', 0):,}")
  
     # Hotel summary
     rec_h = plan["hotel"].get("recommended", {})
     if rec_h:
-        stars = "★" * (rec_h.get("stars") or 0)
+        stars = "★" * rec_h.get("stars", 0)
         print(f"\n  Hotel     : {rec_h.get('name')} {stars}")
         print(f"  Area      : {rec_h.get('area')}")
-        print(f"  Per night : ₹{(plan['hotel'].get('per_night_cost') or 0):,}")
+        print(f"  Per night : ₹{plan['hotel'].get('per_night_cost', 0):,}")
  
     # Itinerary summary
     days = plan["itinerary"].get("days", [])
@@ -349,8 +365,8 @@ if __name__ == "__main__":
  
     # Budget summary
     bgt = plan["budget"]
-    print(f"\n  Budget    : ₹{(bgt.get('total_cost') or 0):,} / ₹{(bgt.get('total_budget') or 0):,}")
-    surplus = bgt.get('surplus_or_deficit') or 0
+    print(f"\n  Budget    : ₹{bgt.get('total_cost', 0):,} / ₹{bgt.get('total_budget', 0):,}")
+    surplus = bgt.get('surplus_or_deficit', 0)
     sign = "+" if surplus >= 0 else ""
     print(f"  Surplus   : {sign}₹{surplus:,}")
     print(f"  Status    : {bgt.get('status', '').upper()}")
@@ -360,7 +376,7 @@ if __name__ == "__main__":
     print(f"\n  Season    : {ctx.get('season', '').title()}")
     print(f"  Weather   : {ctx.get('temperature', '')} — {ctx.get('condition', '')}")
  
- 
+    # ── Test 2: Re-planning ───────────────────────────────────────────────────
     print("\n" + "-"*50)
     print("  TEST 2: Re-plan with change (reduce budget)")
     print("-"*50)
@@ -368,10 +384,10 @@ if __name__ == "__main__":
     updated = planner.replan(session_id, "reduce budget to ₹20,000")
     print(f"\n   Re-planned: {updated['trip_title']}")
     new_bgt = updated["budget"]
-    print(f"  New total : ₹{(new_bgt.get('total_cost') or 0):,}")
+    print(f"  New total : ₹{new_bgt.get('total_cost', 0):,}")
     print(f"  Status    : {new_bgt.get('status', '').upper()}")
  
-
+    # ── Test 3: Compare plan versions ────────────────────────────────────────
     print("\n" + "-"*50)
     print("  TEST 3: Compare plan versions")
     print("-"*50)
@@ -380,9 +396,10 @@ if __name__ == "__main__":
     print(f"\n  Found {comparison['count']} plan versions:")
     for p in comparison["plans"]:
         print(f"    {p['version_id']}  {p['label']:12s}  "
-              f"Budget: ₹{(p['budget'] or 0):,.0f}  "
-              f"Cost: ₹{(p['total_cost'] or 0):,.0f}")
+              f"Budget: ₹{p['budget']:,.0f}  "
+              f"Cost: ₹{p['total_cost']:,.0f}")
  
+    # ── Final summary ─────────────────────────────────────────────────────────
     print("\n" + "=" * 55)
     print("  Part 5 complete!")
     print()
@@ -392,4 +409,3 @@ if __name__ == "__main__":
     print("  Next → Part 6: FastAPI backend (REST API)")
     print("  Say 'Part 6' to continue.")
     print("=" * 55)
- 

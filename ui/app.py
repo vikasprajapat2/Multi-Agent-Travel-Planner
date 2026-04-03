@@ -1,5 +1,6 @@
 
 
+
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,6 +11,7 @@ import json
 import time
 
 # Page config + styling
+
 
 st.set_page_config(
     page_title = "AI Travel Planner",
@@ -47,11 +49,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-#  Session state + API config
+# PART B — Session state + API config
 
 
 API_BASE = "http://localhost:8000"
 
+# Initialise session state on first run
 if "session_id"     not in st.session_state: st.session_state.session_id     = None
 if "plan"           not in st.session_state: st.session_state.plan           = None
 if "chat_history"   not in st.session_state: st.session_state.chat_history   = []
@@ -69,7 +72,7 @@ def api_create_session() -> str | None:
         if r.status_code == 200:
             return r.json()["session_id"]
     except requests.exceptions.ConnectionError:
-        st.error("Cannot connect to API. Make sure FastAPI is running:\n"
+        st.error("❌ Cannot connect to API. Make sure FastAPI is running:\n"
                  "`.venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000`")
     return None
 
@@ -86,9 +89,10 @@ def api_plan(query: str, session_id: str) -> dict | None:
             return r.json().get("plan")
         st.error(f"API error {r.status_code}: {r.json().get('detail','Unknown error')}")
     except requests.exceptions.ConnectionError:
-        st.error("Lost connection to API server.")
+        st.error("❌ Cannot connect to API. Make sure FastAPI is running:\n"
+                 "`.venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000`")
     except requests.exceptions.Timeout:
-        st.error(" Request timed out. The agents are taking too long — try again.")
+        st.error("⏱️ Request timed out. The agents are taking too long — try again.")
     return None
 
 
@@ -133,14 +137,14 @@ def fmt_inr(val) -> str:
         return f"₹{int(val):,}"
     except (TypeError, ValueError):
         return "₹0"
+#Sidebar
 
-#  Sidebar
 
 with st.sidebar:
-    st.markdown("##Travel Planner")
+    st.markdown("## ✈️ Travel Planner")
     st.markdown("---")
 
-    # ── Quick fill form ───────────────────────────────────────────────────────
+    # Quick fill form 
     st.markdown("### Plan a Trip")
     destination  = st.text_input("Destination",    "Goa")
     origin       = st.text_input("From city",      "Ahmedabad")
@@ -153,7 +157,7 @@ with st.sidebar:
                                   ["beach","adventure","food","culture",
                                    "luxury","nature","shopping","spiritual"])
 
-    if st.button("Plan My Trip", use_container_width=True, type="primary"):
+    if st.button("🗺️ Plan My Trip", use_container_width=True, type="primary"):
         pref_str = ", ".join(prefs) if prefs else ""
         query    = (
             f"Plan a {days}-day trip to {destination} from {origin} "
@@ -164,8 +168,9 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # ── Re-plan controls (only show if plan exists) 
     if st.session_state.plan:
-        st.markdown("### Update Plan")
+        st.markdown("### 🔄 Update Plan")
         change_input = st.text_input(
             "What to change?",
             placeholder="e.g. luxury hotel, cut budget to 20k"
@@ -199,7 +204,7 @@ with st.sidebar:
             text = api_export(st.session_state.session_id)
             if text:
                 st.download_button(
-                    label     = "⬇Download",
+                    label     = "⬇️ Download",
                     data      = text,
                     file_name = f"travel_plan_{destination.lower()}.txt",
                     mime      = "text/plain",
@@ -213,13 +218,10 @@ with st.sidebar:
         st.rerun()
 
 
+
 # Handle pending actions
 
-#
-# STREAMLIT CONCEPT — pending actions pattern:
-#   Buttons set a flag in session_state (_pending_query, _pending_replan).
-#   We check those flags at the top of the main area and process them.
-#   This pattern avoids running expensive operations inside button callbacks.
+
 
 if hasattr(st.session_state, "_pending_query"):
     query = st.session_state._pending_query
@@ -233,7 +235,7 @@ if hasattr(st.session_state, "_pending_query"):
         st.session_state.plan = plan
         st.session_state.chat_history.append({"role":"user",    "content":query})
         st.session_state.chat_history.append({"role":"assistant",
-                                               "content":f"Plan ready: {plan.get('trip_title','')}"})
+                                               "content":f"✅ Plan ready: {plan.get('trip_title','')}"})
         st.session_state.plan_versions.append({
             "label": plan.get("trip_title","Plan"),
             "cost":  plan.get("budget",{}).get("total_cost",0),
@@ -260,18 +262,20 @@ if hasattr(st.session_state, "_pending_replan"):
     st.rerun()
 
 
-# PART F — Main content area
+# Main content area
 
-st.markdown("# AI Travel Planner")
+
+
+st.markdown("# ✈️ AI Travel Planner")
 st.caption("Multi-agent AI — flights, hotels, itinerary and budget in one go")
 
-# ── Chat input ────────────────────────────────────────────────────────────────
+
 user_input = st.chat_input(
     "Describe your trip... e.g. '5-day Goa trip for couple under ₹30,000'"
 )
 if user_input:
     ensure_session()
-    with st.spinner("🤖 Planning your trip... (20-40 secons)"):
+    with st.spinner("🤖 Planning your trip... (20-40 seconds)"):
         plan = api_plan(user_input, st.session_state.session_id)
     if plan:
         st.session_state.plan = plan
@@ -285,10 +289,12 @@ if user_input:
     st.rerun()
 
 
-# PART G — Plan display (tabs)
+
+# Plan display (tabs)
+
 
 if not st.session_state.plan:
-    # ── No plan yet — show examples
+    # ── No plan yet — show examples ───────────────────────────────────────────
     st.info("👆 Use the sidebar form or type a query above to plan your trip.")
     st.markdown("### 💡 Try these")
     examples = [
@@ -309,7 +315,7 @@ if not st.session_state.plan:
 else:
     plan = st.session_state.plan
 
-    # ── Trip summary bar
+    # Trip summary bar 
     st.markdown(f"## {plan.get('trip_title','')}")
     st.caption(f"📅 {plan.get('dates','')}  |  "
                f"📍 {plan.get('origin','')} → {plan.get('destination','')}  |  "
@@ -321,16 +327,17 @@ else:
     c3.metric("Travel Type",  plan.get("travel_type","").title())
     c4.metric("Total Cost",   fmt_inr(plan.get("budget",{}).get("total_cost",0)))
 
-    # ── Tabs 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    #  Tabs 
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "✈️ Flights & Hotel",
+        "🚆 Transport",
         "📍 Itinerary",
         "💰 Budget",
         "🌦️ Context",
         "💬 Chat",
     ])
 
-    # ── TAB 1: Flights & Hotel 
+    # Flights & Hotel 
     with tab1:
         col_f, col_h = st.columns(2)
 
@@ -339,7 +346,7 @@ else:
             flights = plan.get("flights", {})
             rec_f   = flights.get("recommended") or {}
             if rec_f:
-                stops_label = "Non-stop" if rec_f.get("stops",1)==0 else "🟡 1 stop"
+                stops_label = "🟢 Non-stop" if rec_f.get("stops",1)==0 else "🟡 1 stop"
                 st.markdown(f"""
 **{rec_f.get('airline','')}** {rec_f.get('flight_number','')}
 - 🛫 {rec_f.get('depart_time','')} → {rec_f.get('arrive_time','')}
@@ -362,12 +369,12 @@ _{flights.get('best_deal_note','')}_
                 st.info("No flight data available")
 
         with col_h:
-            st.markdown("#### Recommended Hotel")
+            st.markdown("#### 🏨 Recommended Hotel")
             hotel = plan.get("hotel", {})
             rec_h = hotel.get("recommended") or {}
             if rec_h:
                 stars = "⭐" * rec_h.get("stars", 0)
-                bkfst = "Breakfast included" if rec_h.get("breakfast") else "❌ No breakfast"
+                bkfst = "✅ Breakfast included" if rec_h.get("breakfast") else "❌ No breakfast"
                 amenities = ", ".join(rec_h.get("amenities", [])[:4])
                 st.markdown(f"""
 **{rec_h.get('name','')}** {stars}
@@ -394,8 +401,96 @@ _{hotel.get('recommendation_reason','')}_
             else:
                 st.info("No hotel data available")
 
-    # ── TAB 2: Itinerary ──────────────────────────────────────────────────────
+    # TAB 2: Transport (Trains + Buses) 
     with tab2:
+        trains_data = plan.get("trains", {})
+        buses_data  = plan.get("buses",  {})
+
+        if not trains_data and not buses_data:
+            st.info("Transport data not available. Re-generate your plan.")
+        else:
+            st.markdown("#### 🚆 Best Train Option")
+            rec_t = trains_data.get("recommended") or {}
+            if rec_t:
+                avail = rec_t.get("availability","Unknown")
+                avail_color = "green" if avail == "Available" else "orange"
+                st.markdown(f"""
+**{rec_t.get('train_name','')}** ({rec_t.get('train_number','')})
+- 🕐 {rec_t.get('depart_time','')} → {rec_t.get('arrive_time','')} ({rec_t.get('duration','')})
+- 🎟️ Class: **{trains_data.get('best_class','')}** | {rec_t.get('distance_km','')} km
+- 📅 Runs: {rec_t.get('days_of_run','')}
+- 💰 **{fmt_inr(trains_data.get('total_cost',0))}** for {plan.get('passengers',2)} passengers
+- :{avail_color}[{avail}]
+
+_{trains_data.get('class_note','')}_
+
+💡 {trains_data.get('booking_tip','')}
+🔗 Search on **irctc.co.in**: `{trains_data.get('irctc_search','')}`
+""")
+                alts_t = trains_data.get("alternatives", [])
+                if alts_t:
+                    with st.expander("View alternative trains"):
+                        for t in alts_t:
+                            st.markdown(
+                                f"**{t.get('train_name','')}** {t.get('train_number','')} | "
+                                f"{t.get('depart_time','')[-5:]} → {t.get('arrive_time','')[-5:]} | "
+                                f"{t.get('travel_class','')} | {fmt_inr(t.get('price_inr',0))} | "
+                                f"{t.get('availability','')}"
+                            )
+            else:
+                st.info("No direct trains found for this route.")
+
+            st.markdown("---")
+            st.markdown("#### 🚌 Best Bus Option")
+            rec_b = buses_data.get("recommended") or {}
+            if rec_b:
+                seats     = rec_b.get("seats_left", 0)
+                seats_str = f"⚠️ Only {seats} seats left!" if seats < 5 else f"{seats} seats available"
+                amenities = ", ".join(rec_b.get("amenities", []))
+                st.markdown(f"""
+**{rec_b.get('operator','')}** — {rec_b.get('bus_type','')}
+- 🕐 {rec_b.get('depart_time','')} → {rec_b.get('arrive_time','')} ({rec_b.get('duration','')})
+- 🪑 {seats_str} | ⭐ {rec_b.get('rating','')}/5
+- 🎒 {amenities}
+- 💰 **{fmt_inr(buses_data.get('total_cost',0))}** for {plan.get('passengers',2)} passengers
+
+_{buses_data.get('type_note','')}_
+
+💡 {buses_data.get('booking_tip','')}
+🔗 Book on **{buses_data.get('booking_platform','redbus.in')}**
+⏰ {buses_data.get('departure_advice','')}
+""")
+                alts_b = buses_data.get("alternatives", [])
+                if alts_b:
+                    with st.expander("View alternative buses"):
+                        for b in alts_b:
+                            st.markdown(
+                                f"**{b.get('operator','')}** | {b.get('bus_type','')} | "
+                                f"{b.get('depart_time','')[-5:]} → {b.get('arrive_time','')[-5:]} | "
+                                f"{fmt_inr(b.get('price_inr',0))} | "
+                                f"{b.get('seats_left',0)} seats | ⭐{b.get('rating','')}"
+                            )
+            else:
+                st.info("No buses found for this route.")
+
+            # Cost comparison
+            st.markdown("---")
+            st.markdown("#### 💰 Cost Comparison")
+            flight_cost = plan.get("flights",{}).get("round_trip_cost", 0)
+            train_cost  = trains_data.get("total_cost", 0)
+            bus_cost    = buses_data.get("total_cost", 0)
+
+            cc1, cc2, cc3 = st.columns(3)
+            cc1.metric("✈️ Flight",  fmt_inr(flight_cost))
+            cc2.metric("🚆 Train",   fmt_inr(train_cost),
+                       delta=fmt_inr(train_cost - flight_cost) if flight_cost else None,
+                       delta_color="inverse")
+            cc3.metric("🚌 Bus",     fmt_inr(bus_cost),
+                       delta=fmt_inr(bus_cost - flight_cost) if flight_cost else None,
+                       delta_color="inverse")
+
+    #  TAB 3: Itinerary 
+    with tab3:
         itinerary = plan.get("itinerary", {})
         highlights = itinerary.get("highlights", [])
         transport  = itinerary.get("local_transport_advice", "")
@@ -405,7 +500,7 @@ _{hotel.get('recommendation_reason','')}_
             st.markdown("**🌟 Highlights:** " +
                         " &nbsp;·&nbsp; ".join(f"`{h}`" for h in highlights))
         if transport:
-            st.markdown(f"** Getting around:** {transport}")
+            st.markdown(f"**🚌 Getting around:** {transport}")
         st.markdown("---")
 
         if not days_list:
@@ -440,8 +535,8 @@ _{hotel.get('recommendation_reason','')}_
                     if day.get("estimated_daily_spend"):
                         st.caption(f"Est. daily spend: {fmt_inr(day['estimated_daily_spend'])}")
 
-    # ── TAB 3: Budget ─────────────────────────────────────────────────────────
-    with tab3:
+    # ── TAB 4: Budget
+    with tab4:
         budget     = plan.get("budget", {})
         breakdown  = budget.get("breakdown", {})
         total_cost = budget.get("total_cost", 0)
@@ -482,10 +577,10 @@ _{hotel.get('recommendation_reason','')}_
         # Tips
         tips = budget.get("optimisation_tips", [])
         if tips:
-            st.markdown("** Money-saving tips:**")
+            st.markdown("**💡 Money-saving tips:**")
             for tip in tips:
                 st.markdown(
-                    f'<div class="tip-box"> {tip}</div>',
+                    f'<div class="tip-box">💡 {tip}</div>',
                     unsafe_allow_html=True
                 )
 
@@ -493,8 +588,8 @@ _{hotel.get('recommendation_reason','')}_
         if upgrade:
             st.caption(f"👑 Luxury upgrade estimated cost: {fmt_inr(upgrade)}")
 
-    # ── TAB 4: Context ────────────────────────────────────────────────────────
-    with tab4:
+    # ── TAB 5: Context
+    with tab5:
         ctx  = plan.get("context", {})
         cc1, cc2 = st.columns(2)
 
@@ -552,8 +647,8 @@ _{hotel.get('recommendation_reason','')}_
                 for tip in etiquette:
                     st.markdown(f"- {tip}")
 
-    # ── TAB 5: Chat ───────────────────────────────────────────────────────────
-    with tab5:
+    # ── TAB 6: Chat 
+    with tab6:
         st.markdown("**Conversation history**")
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):

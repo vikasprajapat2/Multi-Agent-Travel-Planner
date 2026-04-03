@@ -169,7 +169,7 @@ if __name__ == "__main__":
  
         if rec:
             seats = rec.get("seats_left", 0)
-            seats_warn = " ⚠️ Low seats!" if seats < 5 else ""
+            seats_warn = " Low seats!" if seats < 5 else ""
             print(f"  Operator  : {rec.get('operator','')} | {rec.get('bus_type','')}")
             print(f"  Timings   : {rec.get('depart_time','')[-5:]} → "
                   f"{rec.get('arrive_time','')[-5:]} ({rec.get('duration','')})")
