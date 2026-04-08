@@ -83,8 +83,30 @@ _IATA: dict[str, str] = {
 _DEP_HOURS = [6, 8, 10, 13, 16, 19, 21]
 
 
+_CITY_TO_IATA: dict[str, str] = {
+    "ahmedabad": "AMD", "amd": "AMD", "adi": "AMD",
+    "delhi": "DEL", "ndls": "DEL", "new delhi": "DEL",
+    "mumbai": "BOM", "bom": "BOM", "bombay": "BOM",
+    "bangalore": "BLR", "blr": "BLR", "bengaluru": "BLR",
+    "goa": "GOI", "goi": "GOI", "mao": "GOI",
+    "kolkata": "CCU", "ccu": "CCU", "calcutta": "CCU",
+    "dubai": "DXB", "dxb": "DXB",
+    "bangkok": "BKK", "bkk": "BKK",
+    "kochi": "COK", "cok": "COK",
+    "jaipur": "JAI", "jai": "JAI",
+}
+
+def _city_to_iata(city: str) -> str:
+    key = city.lower().strip()
+    if key in _CITY_TO_IATA:
+        return _CITY_TO_IATA[key]
+    if len(key) >= 3:
+        return key[:3].upper()
+    return ""
+
+
 def _route_key(origin: str, dest: str) -> tuple | None:
-    o, d = origin.upper()[:3], dest.upper()[:3]
+    o, d = _city_to_iata(origin), _city_to_iata(dest)
     if (o, d) in _ROUTES: return (o, d)
     if (d, o) in _ROUTES: return (d, o)
     return None

@@ -170,10 +170,22 @@ _DAYS_OF_RUN  = ["Daily", "Daily", "Mon,Wed,Fri,Sun", "Tue,Thu,Sat"]
 
 # Routes key helper
 
+def _city_to_code(city: str) -> str | None:
+    """Convert city name or code to IRCTC station code."""
+    key = city.lower().strip()
+    # Direct lookup
+    if key in _CITY_TO_STATION:
+        return _CITY_TO_STATION[key]
+    # Try first 3 chars as station code
+    if len(key) >= 3:
+        code = key[:3].upper()
+        return code
+    return None
+
 def _train_route_key(origin: str, dest: str) -> tuple | None:
     """Find route key — tries both directions."""
-    o = origin.upper()[:3]
-    d = dest.upper()[:3]
+    o = _city_to_code(origin) or origin.upper()[:3]
+    d = _city_to_code(dest) or dest.upper()[:3]
     if (o, d) in _TRAIN_ROUTES: return (o, d)
     if (d, o) in _TRAIN_ROUTES: return (d, o)
     return None
@@ -181,8 +193,8 @@ def _train_route_key(origin: str, dest: str) -> tuple | None:
  
 def _bus_route_key(origin: str, dest: str) -> tuple:
     """Find bus route key — falls back to default."""
-    o = origin.upper()[:3]
-    d = dest.upper()[:3]
+    o = _city_to_code(origin) or origin.upper()[:3]
+    d = _city_to_code(dest) or dest.upper()[:3]
     if (o, d) in _BUS_ROUTES: return (o, d)
     if (d, o) in _BUS_ROUTES: return (d, o)
     return ("default", "")
@@ -288,7 +300,7 @@ _CITY_TO_STATION: dict[str, str] = {
     "ahmedabad": "ADI", "amd": "ADI", "adi": "ADI",
     "surat":     "ST",  "vadodara": "BRC", "rajkot": "RJT",
     # Maharashtra
-    "mumbai":    "CSTM","bom": "CSTM","bombay": "CSTM",
+    "mumbai":    "BOM","bom": "BOM","bombay": "BOM",
     "pune":      "PUNE","nagpur": "NGP",
     # Delhi/NCR
     "delhi":     "NDLS","del": "NDLS","new delhi": "NDLS",
@@ -314,19 +326,6 @@ _CITY_TO_STATION: dict[str, str] = {
     "dubai":     None,  "bangkok": None, "singapore": None,
     "maldives":  None,  "bangkok": None,
 }
- 
- 
-def _city_to_code(city: str) -> str | None:
-    """Convert city name or code to IRCTC station code."""
-    key = city.lower().strip()
-    # Direct lookup
-    if key in _CITY_TO_STATION:
-        return _CITY_TO_STATION[key]
-    # Try first 3 chars as station code
-    if len(key) >= 3:
-        code = key[:3].upper()
-        return code
-    return None
  
  
 def _parse_run_days(run_on: dict) -> str:
