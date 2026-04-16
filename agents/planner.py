@@ -18,6 +18,10 @@ from agents.bus_agent import BusAgent
 from agents.budget_agent import BudgetAgent
 from agents.context_agent import ContextAgent
 from agents.journey_agent import JourneyAgent
+from agents.user_profile_agent import UserProfileAgent
+from agents.recommendation_agent import RecommendationAgent
+from memory.vector_store import VectorStore
+from models.user_profile import UserProfile
 
 
 # parse prompt
@@ -67,7 +71,10 @@ class PlannerAgent:
         self.bus_agent = BusAgent()
         self.budget_agent = BudgetAgent()
         self.context_agent = ContextAgent()
-        self.journey_agent   = JourneyAgent()
+        self.journey_agent = JourneyAgent()
+        self.user_profile_agent = UserProfileAgent()
+        self.vector_store = VectorStore()
+        self.recommendation_agent = RecommendationAgent(self.vector_store)
 
     # public method 1 - plan()
     def plan(self, user_query: str, session_id: str | None = None) -> dict:
@@ -157,6 +164,37 @@ class PlannerAgent:
                 f"Plan ready: {plan['trip_title']} — ₹{(budget.get('total_cost') or 0):,}"
             )
             print(f"\n[Planner] saved as version {version_id}")
+        
+        # Step 6: Post-planning workflow - Profile, Vector & Recommendations
+        print(f"\n[Planner] Post-planning workflow...")
+        
+        # Update user profile
+        try:
+            profile = UserProfile(session_id or "default_user")
+            self.user_profile_agent.update_profile(profile, user_query, plan)
+            print(f"  ✓ Profile updated")
+        except Exception as e:
+            print(f"  ! Profile update failed: {e}")
+        
+        # Save trip embedding for future recommendations
+        try:
+            trip_text = f"""
+            Destination: {plan.get('destination', 'N/A')}
+            Interests: {plan.get('itinerary', {}).get('highlights', [])}
+            Budget: {plan.get('budget', {}).get('total_cost', 0)}
+            """
+            self.vector_store.add(trip_text)
+            print(f"  ✓ Trip embedding saved")
+        except Exception as e:
+            print(f"  ! Trip embedding failed: {e}")
+        
+        # Get recommendation for next trip
+        try:
+            recommendation = self.recommendation_agent.recommend_next_trip(user_query)
+            plan["recommendation"] = recommendation
+            print(f"  ✓ Recommendation added")
+        except Exception as e:
+            print(f"  ! Recommendation failed: {e}")
         
         print(f"[Planner] Done! Plan: {plan['trip_title']}")
         return plan

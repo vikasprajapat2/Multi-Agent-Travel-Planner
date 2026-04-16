@@ -1,8 +1,8 @@
-from sentence_transformers import SentenceTornsformer
+from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 
-model  SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 class VectorStore:
     def __init__(self):
