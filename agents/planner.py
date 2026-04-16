@@ -317,7 +317,16 @@ class PlannerAgent:
             "raw_query":   request.raw_query,
         }
  
- 
+    vector_store = VectorStore()
+
+    def save_trip_embedding(plan):
+        text = f"""
+        Destination: {plan['destination']}
+        Interests: {plan['itinerary']['highlights']}
+        Budget: {plan['budget']['total_cost']}
+        """
+
+        vector_store.add(text)
 
 # PART C — Self-test (full end-to-end pipeline)
 

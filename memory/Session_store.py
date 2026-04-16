@@ -15,6 +15,7 @@ class PlanVersion:
     result : dict # full plan output form plannerAgent
     total_cost: float # extracted from result['budget"]["total_cost"]
 
+
 class SessionStore:
     _store: dict[str, dict] = {}
 
@@ -169,6 +170,19 @@ class SessionStore:
         # return all stored user preferences for a session 
         session = cls.get(session_id)
         return session['preferences'] if session else {}
+    
+sessions = {}
+
+def create_session():
+    session_id = str(uuid.uuid4())
+
+    sessions[session_id] = {
+        "messages": [],
+        "plans": [],
+        "user_profile": UserProfile(session_id)   # 👈 ADD THIS
+    }
+
+    return session_id
     
 
 if __name__ == "__main__":
